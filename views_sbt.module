@@ -1,0 +1,70 @@
+<?php
+// $id$
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function views_sbt_form_views_exposed_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['sort_by']) && isset($form['sort_order'])) {
+
+    // default sort is fist key of sort by selectbox
+    $by = key($form['sort_by']['#options']);
+
+    // generate and show tabs
+    $tabs = array();
+    foreach ($form['sort_by']['#options'] as $key => $label) {
+
+      // current "sort by" is active
+      if ($form_state['input']) {
+        if ($form_state['input']['sort_by'] == $key) {
+          $active = TRUE;
+          $order = $form_state['input']['sort_order'] == 'DESC' ? 'ASC' : 'DESC';
+        }
+        else {
+          $active = FALSE;
+          $order = $form_state['view']->sort[$key]->options['expose']['order'];
+        }
+      }
+      else {
+        if ($by == $key) {
+          $active = TRUE;
+          $order = $form_state['view']->sort[$key]->options['expose']['order'] == 'DESC' ? 'ASC' : 'DESC';
+        }
+        else {
+          $active = FALSE;
+          $order = $form_state['view']->sort[$key]->options['expose']['order'];
+        }
+      }
+
+      // href value of link
+      $href = implode('&', array(
+        'sort_by='. $key,
+        'sort_order='. $order,
+        'form_build_id='. $form['form_build_id']['#value'],
+        'form_token='. $form['form_token']['#default_value'],
+        'form_id='. $form['form_id']['#value'],
+      ));
+      
+      // class property
+      $class = implode(' ', array(
+        'views-sbt-tab-link',
+        $active ? 'views-sbt-active' : '',
+      ));
+      
+      // write sort order as id
+      $id = 'views-sbt-sort-order-'. $order;
+
+      $tabs[] = '<a href="?'. $href .'" class="'. $class .'" id="'. $id .'">'. $label .'</a>';
+    }
+    $form['sort_tabs'] = array('#markup' => theme('item_list', array('items' => $tabs)));
+
+    // add ajax support
+    drupal_add_js(array('views_sbt' => array($form['#id'])), 'setting');
+    drupal_add_js(drupal_get_path('module', 'views_sbt') .'/js/views_sbt.js');
+
+    // hide selectboxes and submit
+    $form['sort_by']['#prefix'] = $form['sort_order']['#prefix'] = $form['submit']['#prefix'] = '<div class="element-invisible">';
+    $form['sort_by']['#suffix'] = $form['sort_order']['#suffix'] = $form['submit']['#suffix'] = '</div>';
+
+  }
+}

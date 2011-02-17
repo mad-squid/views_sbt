@@ -1,0 +1,6 @@
+; $Id$
+name = Views sort by tabs
+description = Replace standart exposed sorting form by tabs
+package = Views
+core = 7.x
+dependencies[] = views
